@@ -1,0 +1,19 @@
+{
+  "name": "@lang-track/shared",
+  "version": "1.0.0",
+  "private": true,
+  "description": "",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "format": "prettier . --write"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.8.0",
+  "dependencies": {
+    "zod": "^3.24.1"
+  }
+}

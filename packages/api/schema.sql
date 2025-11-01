@@ -1,0 +1,15 @@
+DROP TABLE IF EXISTS users;
+CREATE TABLE IF NOT EXISTS users (
+  id INTEGER PRIMARY KEY,
+  email TEXT UNIQUE NOT NULL,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  updated_at TEXT
+);
+
+DROP TABLE IF EXISTS user_credentials;
+CREATE TABLE IF NOT EXISTS user_credentials (
+  user_id INTEGER PRIMARY KEY NOT NULL,
+  password_hash TEXT NOT NULL,
+  updated_at TEXT,
+  FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+);

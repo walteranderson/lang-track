@@ -1,0 +1,24 @@
+{
+  "name": "@lang-track/api",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "start": "wrangler dev",
+    "cf-typegen": "wrangler types",
+    "format": "prettier . --write"
+  },
+  "dependencies": {
+    "@hono/zod-validator": "^0.7.4",
+    "@lang-track/shared": "workspace:*",
+    "@tsndr/cloudflare-worker-jwt": "^3.2.0",
+    "hono": "^4.6.20",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "22.13.0",
+    "@types/service-worker-mock": "^2.0.4",
+    "wrangler": "^4.45.0"
+  }
+}
