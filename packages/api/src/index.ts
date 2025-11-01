@@ -59,7 +59,7 @@ app.get("/api/hello", async (c) => {
   }
 
   return c.json({
-    message: "hello world",
+    message: "hello world!",
     user,
   });
 });
