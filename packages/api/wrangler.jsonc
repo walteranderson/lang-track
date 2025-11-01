@@ -23,7 +23,15 @@
    */
   "env": {
     "production": {
+      "name": "lang-track-api-production",
       "vars": { "ALLOW_REGISTRATION": "false" },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "lang-track-prod-db",
+          "database_id": "9511d642-cde6-404a-839a-90ad6cb926d8"
+        }
+      ],
     },
     "dev": {
       "vars": { "ALLOW_REGISTRATION": "true" },
