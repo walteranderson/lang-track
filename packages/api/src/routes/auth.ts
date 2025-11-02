@@ -10,6 +10,13 @@ import {
   validateUserCredentials,
 } from "@lang-track/shared";
 import { sign } from "hono/jwt";
+import {
+  createUser,
+  createUserCredentials,
+  getUserByEmail,
+  getUserCredentials,
+} from "../user";
+import { isOk } from "../result";
 
 const authRouter = new Hono<HonoEnv>();
 
@@ -44,10 +51,9 @@ authRouter.post(
     // Find existing user
     // ------------------
 
-    const exists = await c.env.DB.prepare("SELECT * from users WHERE email = ?")
-      .bind(email)
-      .first();
-    if (!!exists) {
+    const exists = await getUserByEmail(c.env, email);
+    if (isOk(exists)) {
+      // User already exists
       return c.json(
         {
           success: false,
@@ -63,31 +69,8 @@ authRouter.post(
     // Create User
     // ------------------
 
-    const now = new Date().toISOString();
-
-    const insertQuery = `
-      INSERT INTO users(email, created_at, updated_at)
-      VALUES (?, ?, ?)
-      RETURNING id
-    `;
-    const { id } = await c.env.DB.prepare(insertQuery)
-      .bind(email, now, now)
-      .first<{ id: number }>();
-
-    // ------------------
-    // Create User Credentials
-    // ------------------
-
-    const passwordHash = await hashPassword(password);
-    const credsQuery = `
-      INSERT INTO user_credentials(user_id, password_hash, updated_at)
-      VALUES(?, ?, ?)
-    `;
-    const { success, error } = await c.env.DB.prepare(credsQuery)
-      .bind(id, passwordHash, now)
-      .run();
-    if (!success) {
-      console.error("insert user_credentials error", error);
+    const created = await createUser(c.env, email);
+    if (!isOk(created)) {
       return c.json(
         {
           success: false,
@@ -99,12 +82,28 @@ authRouter.post(
       );
     }
 
-    const user: User = {
-      id,
-      email,
-      createdAt: now,
-      updatedAt: now,
-    };
+    // ------------------
+    // Create User Credentials
+    // ------------------
+    const { value: user } = created;
+
+    const passwordHash = await hashPassword(password);
+    const credentials = await createUserCredentials(
+      c.env,
+      user.id,
+      passwordHash,
+    );
+    if (!isOk(credentials)) {
+      return c.json(
+        {
+          success: false,
+          error: {
+            name: "Internal Server Error",
+          },
+        },
+        500,
+      );
+    }
 
     return c.json({
       success: true,
@@ -134,13 +133,8 @@ authRouter.post(
     // Get the user by email
     // ------------------
 
-    const userResult = await c.env.DB.prepare(
-      "SELECT * from users WHERE email = ?",
-    )
-      .bind(email)
-      .first();
-    if (!userResult) {
-      console.log("user not found");
+    const userResult = await getUserByEmail(c.env, email);
+    if (!isOk(userResult)) {
       return c.json(
         {
           success: false,
@@ -151,39 +145,14 @@ authRouter.post(
         401,
       );
     }
-
-    let user: User;
-    try {
-      user = validateUser({
-        id: userResult.id,
-        email: userResult.email,
-        createdAt: userResult.created_at,
-        updatedAt: userResult.updated_at,
-      });
-    } catch (err) {
-      console.log("user validate failed");
-      return c.json(
-        {
-          success: false,
-          error: {
-            name: "Unauthorized",
-          },
-        },
-        401,
-      );
-    }
+    const { value: user } = userResult;
 
     // ------------------
     // Get the user credentials
     // ------------------
 
-    const userCredentialResults = await c.env.DB.prepare(
-      "SELECT * from user_credentials WHERE user_id = ?",
-    )
-      .bind(user.id)
-      .first();
-    if (!userCredentialResults) {
-      console.log("user credentials not found");
+    const userCredentialResults = await getUserCredentials(c.env, user.id);
+    if (!isOk(userCredentialResults)) {
       return c.json(
         {
           success: false,
@@ -194,25 +163,7 @@ authRouter.post(
         401,
       );
     }
-
-    let userCredentials: UserCredentials;
-    try {
-      userCredentials = validateUserCredentials({
-        userId: userCredentialResults.user_id,
-        passwordHash: userCredentialResults.password_hash,
-        updatedAt: userCredentialResults.updated_at,
-      });
-    } catch (err) {
-      return c.json(
-        {
-          success: false,
-          error: {
-            name: "Unauthorized",
-          },
-        },
-        401,
-      );
-    }
+    const { value: userCredentials } = userCredentialResults;
 
     // ------------------
     // Check the password
