@@ -4,7 +4,7 @@ export const UserSchema = z.object({
   id: z.number().int().positive(),
   email: z.string().email({ message: "Invalid email address format." }),
   createdAt: z.string().datetime(),
-  updatedAt: z.string().datetime().nullable(),
+  updatedAt: z.string().datetime(),
 });
 
 export type User = z.infer<typeof UserSchema>;
